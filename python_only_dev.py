@@ -48,7 +48,7 @@ tmp_path = os.path.join(package_path, "vllm_pre_built")
 current_vllm_path = os.path.join(cwd, "vllm")
 
 print(f"Renaming {pre_built_vllm_path} to {tmp_path}")
-os.rename(pre_built_vllm_path, tmp_path)
+shutil.move(pre_built_vllm_path, tmp_path)
 
 print(f"linking {current_vllm_path} to {pre_built_vllm_path}")
 os.symlink(current_vllm_path, pre_built_vllm_path)
