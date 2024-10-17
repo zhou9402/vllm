@@ -43,7 +43,6 @@ launch_chunked_prefill() {
       --model $model \
       --port 8100 \
       -tp 4 \
-      --max-model-len 10000 \
       --disable-log-stats \
       --disable-log-requests \
       --enable-chunked-prefill \
@@ -53,7 +52,6 @@ launch_chunked_prefill() {
     --model $model \
     --port 8200 \
     -tp 4 \
-    --max-model-len 10000 \
     --disable-log-stats \
     --disable-log-requests \
     --enable-chunked-prefill \
@@ -73,7 +71,6 @@ launch_disagg_prefill() {
       --model $model \
       --port 8100 \
       -tp 4 \
-      --max-model-len 10000 \
       --disable-log-stats \
       --disable-log-requests \
       --gpu-memory-utilization 0.95 &
@@ -82,7 +79,6 @@ launch_disagg_prefill() {
     --model $model \
     --port 8200 \
     -tp 4 \
-    --max-model-len 10000 \
     --disable-log-stats \
     --disable-log-requests \
     --gpu-memory-utilization 0.95 &
@@ -152,11 +148,11 @@ main() {
   export VLLM_LOGGING_LEVEL=DEBUG
   export VLLM_HOST_IP=$(hostname -I | awk '{print $1}')
 
-  launch_chunked_prefill
-  for qps in 2 4 6 8; do
-  benchmark $qps $default_output_len chunked_prefill
-  done
-  kill_gpu_processes
+  # launch_chunked_prefill
+  # for qps in 2 4 6 8; do
+  # benchmark $qps $default_output_len chunked_prefill
+  # done
+  # kill_gpu_processes
 
   launch_disagg_prefill
   for qps in 2 4 6 8; do
