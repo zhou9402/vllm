@@ -34,66 +34,25 @@ wait_for_server() {
     done" && return 0 || return 1
 }
 
-split_gpus() {
-    # Get the number of GPUs
-    local gpu_count=$(nvidia-smi --list-gpus | wc -l)
-
-    # Calculate the midpoint
-    local midpoint=$((gpu_count / 2))
-
-    # Create two lists
-    local list1=()
-    local list2=()
-
-    # Populate the lists
-    for ((i=0; i<gpu_count; i++)); do
-        if [ $i -lt $midpoint ]; then
-            list1+=($i)
-        else
-            list2+=($i)
-        fi
-    done
-
-    # Convert lists to comma-separated strings
-    local list1_string=$(IFS=,; echo "${list1[*]}")
-    local list2_string=$(IFS=,; echo "${list2[*]}")
-
-    # Return
-    echo "$midpoint"
-    echo "$list1_string"
-    echo "$list2_string"
-}
 
 launch_chunked_prefill() {
-  # Call the function and capture the output
-  readarray -t result < <(split_gpus)
-
-  # The results are now in the 'result' array
-  half_gpu_count=${result[0]}
-  list1=${result[1]}
-  list2=${result[2]}
-
-  # Print the results
-  echo "List 1: $list1"
-  echo "List 2: $list2"
-
-  model=$4
+  model="neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV"
   # disagg prefill
-  CUDA_VISIBLE_DEVICES=$list1 python3 \
+  CUDA_VISIBLE_DEVICES=0,1,2,3 python3 \
       -m vllm.entrypoints.openai.api_server \
       --model $model \
       --port 8100 \
-      -tp $half_gpu_count \
+      -tp 4 \
       --max-model-len 10000 \
       --disable-log-stats \
       --disable-log-requests \
       --enable-chunked-prefill \
       --gpu-memory-utilization 0.95 &
-  CUDA_VISIBLE_DEVICES=$list2 python3 \
+  CUDA_VISIBLE_DEVICES=4,5,6,7 python3 \
     -m vllm.entrypoints.openai.api_server \
     --model $model \
     --port 8200 \
-    -tp $half_gpu_count \
+    -tp 4 \
     --max-model-len 10000 \
     --disable-log-stats \
     --disable-log-requests \
@@ -107,19 +66,9 @@ launch_chunked_prefill() {
 
 
 launch_disagg_prefill() {
-  readarray -t result < <(split_gpus)
-
-  # The results are now in the 'result' array
-  list1=${result[0]}
-  list2=${result[1]}
-
-  # Print the results
-  echo "List 1: $list1"
-  echo "List 2: $list2"
-  model=$4 
-
+  model="neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV" 
   # disagg prefill
-  VLLM_PORT=12345 VLLM_DISTRIBUTED_KV_ROLE=producer CUDA_VISIBLE_DEVICES=$list1 python3 \
+  VLLM_PORT=12345 VLLM_DISTRIBUTED_KV_ROLE=producer CUDA_VISIBLE_DEVICES=0,1,2,3 python3 \
       -m vllm.entrypoints.openai.api_server \
       --model $model \
       --port 8100 \
@@ -128,7 +77,7 @@ launch_disagg_prefill() {
       --disable-log-stats \
       --disable-log-requests \
       --gpu-memory-utilization 0.95 &
-  VLLM_PORT=12345 VLLM_DISTRIBUTED_KV_ROLE=consumer CUDA_VISIBLE_DEVICES=$list2 python3 \
+  VLLM_PORT=12345 VLLM_DISTRIBUTED_KV_ROLE=consumer CUDA_VISIBLE_DEVICES=4,5,6,7 python3 \
     -m vllm.entrypoints.openai.api_server \
     --model $model \
     --port 8200 \
@@ -146,7 +95,7 @@ launch_disagg_prefill() {
 
 benchmark() {
   results_folder="./results"
-  model=$4
+  model="neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV"
   dataset_name="sonnet"
   dataset_path="../sonnet_4x.txt"
   num_prompts=200
@@ -205,13 +154,13 @@ main() {
 
   launch_chunked_prefill
   for qps in 2 4 6 8; do
-  benchmark $qps $default_output_len chunked_prefill "neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV"
+  benchmark $qps $default_output_len chunked_prefill
   done
   kill_gpu_processes
 
   launch_disagg_prefill
   for qps in 2 4 6 8; do
-  benchmark $qps $default_output_len disagg_prefill "neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV"
+  benchmark $qps $default_output_len disagg_prefill
   done
   kill_gpu_processes
 
