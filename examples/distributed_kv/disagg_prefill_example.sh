@@ -26,7 +26,7 @@ wait_for_server() {
 # prefilling instance, which is the KV producer
 VLLM_DISTRIBUTED_KV_ROLE=producer CUDA_VISIBLE_DEVICES=0 python3 \
     -m vllm.entrypoints.openai.api_server \
-    --model meta-llama/Meta-Llama-3.1-8B-Instruct \
+    --model neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 \
     --port 8100 \
     --max-model-len 10000 \
     --gpu-memory-utilization 0.8 &
@@ -34,7 +34,7 @@ VLLM_DISTRIBUTED_KV_ROLE=producer CUDA_VISIBLE_DEVICES=0 python3 \
 # decoding instance, which is the KV consumer
 VLLM_DISTRIBUTED_KV_ROLE=consumer CUDA_VISIBLE_DEVICES=1 python3 \
     -m vllm.entrypoints.openai.api_server \
-    --model meta-llama/Meta-Llama-3.1-8B-Instruct \
+    --model neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 \
     --port 8200 \
     --max-model-len 10000 \
     --gpu-memory-utilization 0.8 &
@@ -54,7 +54,7 @@ sleep 1
 output1=$(curl -s http://localhost:8000/v1/completions \
 -H "Content-Type: application/json" \
 -d '{
-"model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+"model": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 "prompt": "San Francisco is a",
 "max_tokens": 10,
 "temperature": 0
@@ -63,7 +63,7 @@ output1=$(curl -s http://localhost:8000/v1/completions \
 output2=$(curl -s http://localhost:8000/v1/completions \
 -H "Content-Type: application/json" \
 -d '{
-"model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+"model": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 "prompt": "Santa Clara is a",
 "max_tokens": 10,
 "temperature": 0

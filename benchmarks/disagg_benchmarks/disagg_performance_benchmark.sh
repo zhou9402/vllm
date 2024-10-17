@@ -88,7 +88,7 @@ launch_chunked_prefill() {
       --disable-log-stats \
       --disable-log-requests \
       --enable-chunked-prefill \
-      --gpu-memory-utilization 0.8 &
+      --gpu-memory-utilization 0.95 &
   CUDA_VISIBLE_DEVICES=$list2 python3 \
     -m vllm.entrypoints.openai.api_server \
     --model $model \
@@ -98,7 +98,7 @@ launch_chunked_prefill() {
     --disable-log-stats \
     --disable-log-requests \
     --enable-chunked-prefill \
-    --gpu-memory-utilization 0.8 &
+    --gpu-memory-utilization 0.95 &
   wait_for_server 8100
   wait_for_server 8200
   python3 round_robin_proxy.py &
@@ -127,7 +127,7 @@ launch_disagg_prefill() {
       --max-model-len 10000 \
       --disable-log-stats \
       --disable-log-requests \
-      --gpu-memory-utilization 0.8 &
+      --gpu-memory-utilization 0.95 &
   VLLM_PORT=12345 VLLM_DISTRIBUTED_KV_ROLE=consumer CUDA_VISIBLE_DEVICES=$list2 python3 \
     -m vllm.entrypoints.openai.api_server \
     --model $model \
@@ -136,7 +136,7 @@ launch_disagg_prefill() {
     --max-model-len 10000 \
     --disable-log-stats \
     --disable-log-requests \
-    --gpu-memory-utilization 0.8 &
+    --gpu-memory-utilization 0.95 &
   wait_for_server 8100
   wait_for_server 8200
   python3 disagg_prefill_proxy_server.py &
@@ -205,13 +205,13 @@ main() {
 
   launch_chunked_prefill
   for qps in 2 4 6 8; do
-  benchmark $qps $default_output_len chunked_prefill "meta-llama/Meta-Llama-3.1-70B-Instruct"
+  benchmark $qps $default_output_len chunked_prefill "neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV"
   done
   kill_gpu_processes
 
   launch_disagg_prefill
   for qps in 2 4 6 8; do
-  benchmark $qps $default_output_len disagg_prefill "meta-llama/Meta-Llama-3.1-70B-Instruct"
+  benchmark $qps $default_output_len disagg_prefill "neuralmagic/Meta-Llama-3-70B-Instruct-FP8-KV"
   done
   kill_gpu_processes
 
